@@ -37,10 +37,26 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           
         run: python fetch_ohlcv.py
-
       - name: Commit data
         run: |
           git config user.name "ohlcv-bot"
           git config user.email "ohlcv-bot@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || (git commit -m "data update" && git pull --rebase && git push)
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          cp -r data /tmp/data_new
+          ok=0
+          for i in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp -r /tmp/data_new/. data/
+            git add data
+            if git diff --cached --quiet; then ok=1; break; fi
+            git commit -m "data update"
+            if git push; then ok=1; break; fi
+            sleep 5
+          done
+          [ "$ok" = 1 ] || exit 1
+    
