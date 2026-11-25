@@ -1,0 +1,43 @@
+name: ohlcv
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ohlcv
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          pip install pandas websocket-client requests
+          pip install git+https://github.com/rongardF/tvdatafeed.git
+
+      - name: Fetch OHLCV
+        env:
+          TV_USER: ${{ secrets.TV_USER }}
+          TV_PASS: ${{ secrets.TV_PASS }}
+        run: python fetch_ohlcv.py
+
+      - name: Commit data
+        run: |
+          git config user.name "ohlcv-bot"
+          git config user.email "ohlcv-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "data update" && git pull --rebase && git push)
