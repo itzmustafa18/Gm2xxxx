@@ -33,6 +33,9 @@ jobs:
         env:
           TV_USER: ${{ secrets.TV_USER }}
           TV_PASS: ${{ secrets.TV_PASS }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          
         run: python fetch_ohlcv.py
 
       - name: Commit data
